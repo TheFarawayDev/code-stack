@@ -91,7 +91,7 @@ export default function CodeStoragePage() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Code Storage Server</h1>
+          <h1 className="text-3xl font-bold">Code Stack</h1>
           <p className="text-muted-foreground">
             Store and retrieve code snippets with temporary 12-character access codes
           </p>
