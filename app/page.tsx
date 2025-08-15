@@ -24,19 +24,27 @@ export default function CodeStoragePage() {
 
     setLoading(true)
     try {
+      console.log("[v0] Storing code")
       const response = await fetch("/api/store", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code.trim() }),
       })
 
-      if (!response.ok) throw new Error("Failed to store code")
+      console.log("[v0] Store response status:", response.status)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log("[v0] Store error:", errorData)
+        throw new Error(errorData.error || "Failed to store code")
+      }
 
       const data = await response.json()
+      console.log("[v0] Store success:", data)
       setAccessCode(data.accessCode)
-      toast({ title: "Success", description: "Code stored successfully!" })
+      toast({ title: "Success", description: "Code stored for 1 hour!" })
     } catch (error) {
-      toast({ title: "Error", description: "Failed to store code" })
+      console.error("[v0] Store error:", error)
+      toast({ title: "Error", description: error.message || "Failed to store code" })
     } finally {
       setLoading(false)
     }
@@ -50,20 +58,29 @@ export default function CodeStoragePage() {
 
     setLoading(true)
     try {
+      console.log("[v0] Retrieving code:", accessCode.trim())
       const response = await fetch(`/api/retrieve/${accessCode.trim()}`)
+      console.log("[v0] Retrieve response status:", response.status)
 
       if (!response.ok) {
+        const errorData = await response.json()
+        console.log("[v0] Retrieve error:", errorData)
         if (response.status === 404) {
           throw new Error("Code not found or expired")
         }
-        throw new Error("Failed to retrieve code")
+        throw new Error(errorData.error || "Failed to retrieve code")
       }
 
       const data = await response.json()
+      console.log("[v0] Retrieve success:", data)
       setRetrievedCode(data.code)
-      toast({ title: "Success", description: "Code retrieved successfully!" })
+      toast({
+        title: "Success",
+        description: `Code retrieved successfully! - ${data.remainingTime} remaining`,
+      })
     } catch (error) {
-      toast({ title: "Error", description: error.message })
+      console.error("[v0] Retrieve error:", error)
+      toast({ title: "Error", description: error.message || "Failed to retrieve code" })
       setRetrievedCode("")
     } finally {
       setLoading(false)
@@ -146,10 +163,19 @@ export default function CodeStoragePage() {
           <TabsContent value="retrieve" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Retrieve Code</CardTitle>
-                <CardDescription>Enter the 12-character access code to retrieve stored code.</CardDescription>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Retrieve Code</CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(retrievedCode)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadCode}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter 12-character access code"
