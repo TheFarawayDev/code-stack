@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Clock } from "lucide-react"
+import { Trash2, Clock, Plus, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface CodeEntry {
@@ -15,11 +15,14 @@ interface CodeEntry {
   timestamp: number
   expiresAt: number
   expired?: boolean
+  teacherId?: string
 }
 
 export default function DashboardPage() {
   const [activeCodes, setActiveCodes] = useState<CodeEntry[]>([])
   const [expiredCodes, setExpiredCodes] = useState<CodeEntry[]>([])
+  const [teacherIds, setTeacherIds] = useState<string[]>([])
+  const [newTeacherId, setNewTeacherId] = useState("")
   const [dashboardKey, setDashboardKey] = useState("")
   const [authenticated, setAuthenticated] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -47,6 +50,7 @@ export default function DashboardPage() {
         console.log("[v0] Dashboard data:", data)
         setActiveCodes(data.activeCodes || [])
         setExpiredCodes(data.expiredCodes || [])
+        setTeacherIds(data.teacherIds || [])
         toast({ title: "Success", description: "Dashboard data loaded" })
       } else {
         const errorData = await response.json()
@@ -82,6 +86,56 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("[v0] Expire error:", error)
       toast({ title: "Error", description: "Failed to expire code" })
+    }
+  }
+
+  const addTeacherId = async () => {
+    if (!newTeacherId.trim()) {
+      toast({ title: "Error", description: "Please enter a teacher ID" })
+      return
+    }
+
+    try {
+      console.log("[v0] Adding teacher ID:", newTeacherId)
+      const response = await fetch("/api/dashboard/teachers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherId: newTeacherId.trim() }),
+      })
+
+      if (response.ok) {
+        setNewTeacherId("")
+        loadDashboardData()
+        toast({ title: "Success", description: "Teacher ID added successfully" })
+      } else {
+        const errorData = await response.json()
+        toast({ title: "Error", description: errorData.error || "Failed to add teacher ID" })
+      }
+    } catch (error) {
+      console.error("[v0] Add teacher ID error:", error)
+      toast({ title: "Error", description: "Failed to add teacher ID" })
+    }
+  }
+
+  const removeTeacherId = async (teacherId: string) => {
+    try {
+      console.log("[v0] Removing teacher ID:", teacherId)
+      const response = await fetch("/api/dashboard/teachers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherId }),
+      })
+
+      if (response.ok) {
+        loadDashboardData()
+        toast({ title: "Success", description: "Teacher ID removed successfully" })
+      } else {
+        const errorData = await response.json()
+        toast({ title: "Error", description: errorData.error || "Failed to remove teacher ID" })
+      }
+    } catch (error) {
+      console.error("[v0] Remove teacher ID error:", error)
+      toast({ title: "Error", description: "Failed to remove teacher ID" })
     }
   }
 
@@ -129,7 +183,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage active and expired codes</p>
+            <p className="text-muted-foreground">Manage active codes, expired codes, and teacher IDs</p>
           </div>
           <Button onClick={loadDashboardData} disabled={loading}>
             {loading ? "Refreshing..." : "Refresh"}
@@ -137,9 +191,10 @@ export default function DashboardPage() {
         </div>
 
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active">Active Codes ({activeCodes.length})</TabsTrigger>
             <TabsTrigger value="expired">Expired Codes ({expiredCodes.length})</TabsTrigger>
+            <TabsTrigger value="teachers">Teacher IDs ({teacherIds.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-4">
@@ -152,6 +207,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <code className="text-lg font-mono font-bold">{entry.accessCode}</code>
                           <Badge variant="secondary">Active</Badge>
+                          {entry.teacherId && <Badge variant="outline">Teacher: {entry.teacherId}</Badge>}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>Created: {formatTime(entry.timestamp)}</span>
@@ -186,6 +242,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2">
                         <code className="text-lg font-mono font-bold">{entry.accessCode}</code>
                         <Badge variant="destructive">Expired</Badge>
+                        {entry.teacherId && <Badge variant="outline">Teacher: {entry.teacherId}</Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>Created: {formatTime(entry.timestamp)}</span>
@@ -200,6 +257,53 @@ export default function DashboardPage() {
                 <Card>
                   <CardContent className="pt-6 text-center text-muted-foreground">
                     No expired codes in history
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="teachers" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Teacher ID</CardTitle>
+                <CardDescription>Add new teacher IDs that can store code for 24 hours</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter new teacher ID"
+                    value={newTeacherId}
+                    onChange={(e) => setNewTeacherId(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && addTeacherId()}
+                  />
+                  <Button onClick={addTeacherId}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4">
+              {teacherIds.map((teacherId) => (
+                <Card key={teacherId}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <code className="text-lg font-mono font-bold">{teacherId}</code>
+                        <Badge variant="secondary">Teacher ID</Badge>
+                      </div>
+                      <Button variant="destructive" size="sm" onClick={() => removeTeacherId(teacherId)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {teacherIds.length === 0 && (
+                <Card>
+                  <CardContent className="pt-6 text-center text-muted-foreground">
+                    No teacher IDs configured
                   </CardContent>
                 </Card>
               )}

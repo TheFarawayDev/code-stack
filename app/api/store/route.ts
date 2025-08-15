@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { codeStorage, generateAccessCode, cleanupExpired, storeCode } from "@/lib/storage"
+import { codeStorage, generateAccessCode, cleanupExpired, storeCode, isValidTeacherId } from "@/lib/storage"
 
 function isVercelEnvironment() {
   return process.env.VERCEL === "1" || process.env.VERCEL_ENV || process.env.NODE_ENV === "development"
@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { code } = await request.json()
-    console.log("[v0] Storing code")
+    const { code, teacherId } = await request.json()
+    console.log("[v0] Storing code with teacher ID:", teacherId)
 
     if (!code || typeof code !== "string" || code.trim().length === 0) {
       return NextResponse.json({ error: "Code is required and must be a non-empty string" }, { status: 400 })
@@ -26,13 +26,15 @@ export async function POST(request: NextRequest) {
     } while (codeStorage.has(accessCode))
 
     const now = Date.now()
-    const expirationTime = 60 * 60 * 1000 // 1 hour
+    const isTeacher = teacherId && isValidTeacherId(teacherId.trim())
+    const expirationTime = isTeacher ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000 // 24 hours or 1 hour
     const expiresAt = now + expirationTime
 
     await storeCode(accessCode, {
       code: code.trim(),
       timestamp: now,
       expiresAt: expiresAt,
+      teacherId: isTeacher ? teacherId.trim() : undefined,
     })
 
     // Set up automatic deletion
@@ -40,11 +42,12 @@ export async function POST(request: NextRequest) {
       codeStorage.delete(accessCode)
     }, expirationTime)
 
-    console.log("[v0] Code stored successfully:", accessCode)
+    console.log("[v0] Code stored successfully:", accessCode, "Teacher:", isTeacher)
 
     return NextResponse.json({
       accessCode,
-      expiresIn: "1 hour",
+      expiresIn: isTeacher ? "24 hours" : "1 hour",
+      expiresIn24Hours: isTeacher,
       message: "Code stored successfully",
     })
   } catch (error) {
