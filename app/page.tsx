@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function CodeStoragePage() {
   const [code, setCode] = useState("")
+  const [teacherId, setTeacherId] = useState("")
   const [accessCode, setAccessCode] = useState("")
   const [retrievedCode, setRetrievedCode] = useState("")
   const [loading, setLoading] = useState(false)
@@ -24,11 +25,14 @@ export default function CodeStoragePage() {
 
     setLoading(true)
     try {
-      console.log("[v0] Storing code")
+      console.log("[v0] Storing code with teacher ID:", teacherId)
       const response = await fetch("/api/store", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({
+          code: code.trim(),
+          teacherId: teacherId.trim() || undefined,
+        }),
       })
 
       console.log("[v0] Store response status:", response.status)
@@ -41,7 +45,9 @@ export default function CodeStoragePage() {
       const data = await response.json()
       console.log("[v0] Store success:", data)
       setAccessCode(data.accessCode)
-      toast({ title: "Success", description: "Code stored for 1 hour!" })
+
+      const expirationMessage = data.expiresIn24Hours ? "Code stored for 24 hours!" : "Code stored for 1 hour!"
+      toast({ title: "Success", description: expirationMessage })
     } catch (error) {
       console.error("[v0] Store error:", error)
       toast({ title: "Error", description: error.message || "Failed to store code" })
@@ -125,10 +131,24 @@ export default function CodeStoragePage() {
               <CardHeader>
                 <CardTitle>Store Code</CardTitle>
                 <CardDescription>
-                  Paste your code below to get a 12-character access code. Code expires in 1 hour.
+                  Paste your code below to get a 12-character access code. Code expires in 1 hour (24 hours with teacher
+                  ID).
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="teacherId" className="text-sm font-medium">
+                    Teacher ID (optional - extends to 24 hours)
+                  </label>
+                  <Input
+                    id="teacherId"
+                    placeholder="Enter teacher ID for 24-hour storage"
+                    value={teacherId}
+                    onChange={(e) => setTeacherId(e.target.value)}
+                    className="font-mono"
+                  />
+                </div>
+
                 <Textarea
                   placeholder="Paste your code here..."
                   value={code}

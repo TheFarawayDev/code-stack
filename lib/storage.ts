@@ -1,11 +1,15 @@
 export const codeStorage = new Map<string, StoredCode>()
 export const codeHistory = new Map<string, StoredCode>()
 
+const teacherIds = new Set<string>(["TEACHER001", "ADMIN123", "EDUCATOR456"])
+
 export interface StoredCode {
   code: string
   timestamp: number
   expiresAt: number
   expired?: boolean
+  teacherId?: string
+  accessCode?: string
 }
 
 // Clean up expired entries based on expiresAt timestamp
@@ -71,4 +75,29 @@ export function getExpiredCodes(): StoredCode[] {
     ...data,
     accessCode,
   }))
+}
+
+export function isValidTeacherId(teacherId: string): boolean {
+  return teacherIds.has(teacherId)
+}
+
+export function getTeacherIds(): string[] {
+  return Array.from(teacherIds)
+}
+
+export function addTeacherId(teacherId: string): void {
+  teacherIds.add(teacherId)
+  console.log("[v0] Added teacher ID:", teacherId)
+}
+
+export function removeTeacherId(teacherId: string): boolean {
+  const removed = teacherIds.delete(teacherId)
+  if (removed) {
+    console.log("[v0] Removed teacher ID:", teacherId)
+  }
+  return removed
+}
+
+export function getTeacherIdCount(): number {
+  return teacherIds.size
 }
