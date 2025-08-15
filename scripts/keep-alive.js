@@ -1,7 +1,7 @@
 // Keep-alive script to prevent serverless function from going idle
 // This script pings the server every 5 minutes to keep it warm
 
-const SERVER_URL = process.env.SERVER_URL || "https://your-app-name.vercel.app"
+const SERVER_URL = process.env.SERVER_URL || "https://code-stack-farawaydev.vercel.app"
 const PING_INTERVAL = 5 * 60 * 1000 // 5 minutes in milliseconds
 
 console.log("[Keep-Alive] Starting keep-alive service...")
