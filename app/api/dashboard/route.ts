@@ -11,9 +11,9 @@ export async function GET() {
     console.log("[v0] Dashboard API: Cleaning up expired codes")
     await cleanupExpired()
 
-    const activeCodes = getActiveCodes()
-    const expiredCodes = getExpiredCodes()
-    const teacherIds = getTeacherIds()
+    const activeCodes = await getActiveCodes()
+    const expiredCodes = await getExpiredCodes()
+    const teacherIds = await getTeacherIds()
 
     console.log("[v0] Dashboard API: Returning data", {
       activeCount: activeCodes.length,

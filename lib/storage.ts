@@ -184,104 +184,40 @@ export async function getExpiredCodes(): Promise<StoredCode[]> {
   }))
 }
 
-// Clean up expired entries based on expiresAt timestamp
-// export async function cleanupExpired() {
-//   const now = Date.now()
-//   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+async function persistTeacherIds() {
+  const ids = Array.from(teacherIds)
+  console.log("[v0] Teacher IDs updated. Current list:", ids)
+  console.log("[v0] To persist across restarts, set TEACHER_IDS environment variable to:", JSON.stringify(ids))
+}
 
-//   console.log("[v0] Cleaning up expired codes")
+export function isValidTeacherId(teacherId: string): boolean {
+  return teacherIds.has(teacherId)
+}
 
-//   // Move expired active codes to history
-//   for (const [key, value] of codeStorage.entries()) {
-//     if (value.expiresAt < now) {
-//       codeHistory.set(key, { ...value, expired: true })
-//       codeStorage.delete(key)
-//       console.log("[v0] Moved expired code to history:", key)
-//     }
-//   }
+export function getTeacherIds(): string[] {
+  return Array.from(teacherIds)
+}
 
-//   // Clean up history older than 30 days
-//   for (const [key, value] of codeHistory.entries()) {
-//     if (value.timestamp < thirtyDaysAgo) {
-//       codeHistory.delete(key)
-//       console.log("[v0] Removed old history entry:", key)
-//     }
-//   }
-// }
+export function addTeacherId(teacherId: string): boolean {
+  if (teacherIds.has(teacherId)) {
+    console.log("[v0] Teacher ID already exists:", teacherId)
+    return false
+  }
+  teacherIds.add(teacherId)
+  console.log("[v0] Added teacher ID:", teacherId)
+  persistTeacherIds()
+  return true
+}
 
-// async function persistTeacherIds() {
-//   const ids = Array.from(teacherIds)
-//   console.log("[v0] Teacher IDs updated. Current list:", ids)
-//   console.log("[v0] To persist across restarts, set TEACHER_IDS environment variable to:", JSON.stringify(ids))
-// }
+export function removeTeacherId(teacherId: string): boolean {
+  const removed = teacherIds.delete(teacherId)
+  if (removed) {
+    console.log("[v0] Removed teacher ID:", teacherId)
+    persistTeacherIds()
+  }
+  return removed
+}
 
-// export async function storeCode(accessCode: string, storedCode: StoredCode) {
-//   codeStorage.set(accessCode, storedCode)
-//   console.log("[v0] Stored code:", accessCode)
-// }
-
-// export function generateAccessCode(): string {
-//   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-//   let result = ""
-//   for (let i = 0; i < 12; i++) {
-//     result += chars.charAt(Math.floor(Math.random() * chars.length))
-//   }
-//   return result
-// }
-
-// export async function expireCode(accessCode: string): Promise<boolean> {
-//   const stored = codeStorage.get(accessCode)
-//   if (stored) {
-//     codeHistory.set(accessCode, { ...stored, expired: true })
-//     codeStorage.delete(accessCode)
-//     console.log("[v0] Manually expired code:", accessCode)
-//     return true
-//   }
-//   return false
-// }
-
-// export function getActiveCodes(): StoredCode[] {
-//   return Array.from(codeStorage.entries()).map(([accessCode, data]) => ({
-//     ...data,
-//     accessCode,
-//   }))
-// }
-
-// export function getExpiredCodes(): StoredCode[] {
-//   return Array.from(codeHistory.entries()).map(([accessCode, data]) => ({
-//     ...data,
-//     accessCode,
-//   }))
-// }
-
-// export function isValidTeacherId(teacherId: string): boolean {
-//   return teacherIds.has(teacherId)
-// }
-
-// export function getTeacherIds(): string[] {
-//   return Array.from(teacherIds)
-// }
-
-// export function addTeacherId(teacherId: string): boolean {
-//   if (teacherIds.has(teacherId)) {
-//     console.log("[v0] Teacher ID already exists:", teacherId)
-//     return false
-//   }
-//   teacherIds.add(teacherId)
-//   console.log("[v0] Added teacher ID:", teacherId)
-//   persistTeacherIds()
-//   return true
-// }
-
-// export function removeTeacherId(teacherId: string): boolean {
-//   const removed = teacherIds.delete(teacherId)
-//   if (removed) {
-//     console.log("[v0] Removed teacher ID:", teacherId)
-//     persistTeacherIds()
-//   }
-//   return removed
-// }
-
-// export function getTeacherIdCount(): number {
-//   return teacherIds.size
-// }
+export function getTeacherIdCount(): number {
+  return teacherIds.size
+}
