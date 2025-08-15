@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     } while (codeStorage.has(accessCode))
 
     const now = Date.now()
-    const isTeacher = teacherId && isValidTeacherId(teacherId.trim())
+    const isTeacher = teacherId && (await isValidTeacherId(teacherId.trim()))
     const expirationTime = isTeacher ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000 // 24 hours or 1 hour
     const expiresAt = now + expirationTime
 

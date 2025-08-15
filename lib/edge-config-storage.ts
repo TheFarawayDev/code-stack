@@ -1,4 +1,4 @@
-import { get, set } from "@vercel/edge-config"
+import { get } from "@vercel/edge-config"
 
 export async function getTeacherIdsFromEdgeConfig(): Promise<string[]> {
   try {
@@ -7,16 +7,6 @@ export async function getTeacherIdsFromEdgeConfig(): Promise<string[]> {
   } catch (error) {
     console.log("[v0] Error getting teacher IDs from Edge Config:", error)
     return ["TEACHER001", "ADMIN123", "EDUCATOR456"]
-  }
-}
-
-export async function setTeacherIdsToEdgeConfig(teacherIds: string[]): Promise<boolean> {
-  try {
-    await set("teacher_ids", teacherIds)
-    return true
-  } catch (error) {
-    console.log("[v0] Error setting teacher IDs to Edge Config:", error)
-    return false
   }
 }
 
@@ -29,12 +19,6 @@ export async function getConfigValue(key: string): Promise<any> {
   }
 }
 
-export async function setConfigValue(key: string, value: any): Promise<boolean> {
-  try {
-    await set(key, value)
-    return true
-  } catch (error) {
-    console.log(`[v0] Error setting config value for ${key}:`, error)
-    return false
-  }
-}
+// Note: Edge Config is read-only from application code
+// To update values, use the Vercel dashboard or CLI:
+// vercel env add EDGE_CONFIG_ITEM_KEY value

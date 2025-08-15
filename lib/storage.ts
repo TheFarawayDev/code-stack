@@ -5,7 +5,20 @@ export const codeStorage = new Map<string, StoredCode>()
 export const codeHistory = new Map<string, StoredCode>()
 
 // Initialize teacher IDs from environment variable or use defaults
-function initializeTeacherIds(): Set<string> {
+let teacherIds: Set<string> | null = null
+
+async function initializeTeacherIds(): Promise<Set<string>> {
+  // Try Edge Config first
+  try {
+    const { getTeacherIdsFromEdgeConfig } = await import("./edge-config-storage")
+    const edgeConfigIds = await getTeacherIdsFromEdgeConfig()
+    console.log("[v0] Loaded teacher IDs from Edge Config:", edgeConfigIds)
+    return new Set(edgeConfigIds)
+  } catch (error) {
+    console.log("[v0] Could not load from Edge Config, trying environment variable")
+  }
+
+  // Fallback to environment variable
   const envTeacherIds = process.env.TEACHER_IDS
   if (envTeacherIds) {
     try {
@@ -16,11 +29,17 @@ function initializeTeacherIds(): Set<string> {
       console.log("[v0] Failed to parse TEACHER_IDS from environment, using defaults")
     }
   }
+
   console.log("[v0] Using default teacher IDs")
   return new Set(["TEACHER001", "ADMIN123", "EDUCATOR456"])
 }
 
-const teacherIds = initializeTeacherIds()
+async function getTeacherIdsSet(): Promise<Set<string>> {
+  if (!teacherIds) {
+    teacherIds = await initializeTeacherIds()
+  }
+  return teacherIds
+}
 
 export interface StoredCode {
   code: string
@@ -185,39 +204,45 @@ export async function getExpiredCodes(): Promise<StoredCode[]> {
 }
 
 async function persistTeacherIds() {
-  const ids = Array.from(teacherIds)
-  console.log("[v0] Teacher IDs updated. Current list:", ids)
-  console.log("[v0] To persist across restarts, set TEACHER_IDS environment variable to:", JSON.stringify(ids))
+  const ids = await getTeacherIdsSet()
+  const idsArray = Array.from(ids)
+  console.log("[v0] Teacher IDs updated. Current list:", idsArray)
+  console.log("[v0] To persist across restarts, set TEACHER_IDS environment variable to:", JSON.stringify(idsArray))
 }
 
-export function isValidTeacherId(teacherId: string): boolean {
-  return teacherIds.has(teacherId)
+export async function isValidTeacherId(teacherId: string): Promise<boolean> {
+  const ids = await getTeacherIdsSet()
+  return ids.has(teacherId)
 }
 
-export function getTeacherIds(): string[] {
-  return Array.from(teacherIds)
+export async function getTeacherIds(): Promise<string[]> {
+  const ids = await getTeacherIdsSet()
+  return Array.from(ids)
 }
 
-export function addTeacherId(teacherId: string): boolean {
-  if (teacherIds.has(teacherId)) {
+export async function addTeacherId(teacherId: string): Promise<boolean> {
+  const ids = await getTeacherIdsSet()
+  if (ids.has(teacherId)) {
     console.log("[v0] Teacher ID already exists:", teacherId)
     return false
   }
-  teacherIds.add(teacherId)
+  ids.add(teacherId)
   console.log("[v0] Added teacher ID:", teacherId)
-  persistTeacherIds()
+  await persistTeacherIds()
   return true
 }
 
-export function removeTeacherId(teacherId: string): boolean {
-  const removed = teacherIds.delete(teacherId)
+export async function removeTeacherId(teacherId: string): Promise<boolean> {
+  const ids = await getTeacherIdsSet()
+  const removed = ids.delete(teacherId)
   if (removed) {
     console.log("[v0] Removed teacher ID:", teacherId)
-    persistTeacherIds()
+    await persistTeacherIds()
   }
   return removed
 }
 
-export function getTeacherIdCount(): number {
-  return teacherIds.size
+export async function getTeacherIdCount(): Promise<number> {
+  const ids = await getTeacherIdsSet()
+  return ids.size
 }
