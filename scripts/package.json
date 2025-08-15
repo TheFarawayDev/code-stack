@@ -1,0 +1,14 @@
+{
+  "name": "keep-alive-scripts",
+  "version": "1.0.0",
+  "description": "Scripts to keep the serverless function warm",
+  "main": "keep-alive.js",
+  "scripts": {
+    "start": "node keep-alive.js",
+    "external": "node external-keep-alive.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
