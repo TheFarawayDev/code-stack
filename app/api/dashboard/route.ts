@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getActiveCodes, getExpiredCodes, cleanupExpired } from "@/lib/storage"
+import { getActiveCodes, getExpiredCodes, cleanupExpired, getTeacherIds } from "@/lib/storage"
 
 export async function GET() {
   // Only block if explicitly not on Vercel and not in development
@@ -13,15 +13,18 @@ export async function GET() {
 
     const activeCodes = getActiveCodes()
     const expiredCodes = getExpiredCodes()
+    const teacherIds = getTeacherIds()
 
     console.log("[v0] Dashboard API: Returning data", {
       activeCount: activeCodes.length,
       expiredCount: expiredCodes.length,
+      teacherIdCount: teacherIds.length,
     })
 
     return NextResponse.json({
       activeCodes,
       expiredCodes,
+      teacherIds,
     })
   } catch (error) {
     console.error("[v0] Dashboard API error:", error)

@@ -85,9 +85,14 @@ export function getTeacherIds(): string[] {
   return Array.from(teacherIds)
 }
 
-export function addTeacherId(teacherId: string): void {
+export function addTeacherId(teacherId: string): boolean {
+  if (teacherIds.has(teacherId)) {
+    console.log("[v0] Teacher ID already exists:", teacherId)
+    return false
+  }
   teacherIds.add(teacherId)
   console.log("[v0] Added teacher ID:", teacherId)
+  return true
 }
 
 export function removeTeacherId(teacherId: string): boolean {
